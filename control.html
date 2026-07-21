@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Talkin' Baseball — Trade Reaction CONTROL</title>
+<style>
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{
+    font-family: -apple-system, Arial, sans-serif;
+    background:#0f1c2e;
+    color:#eef3f8;
+    padding:20px;
+    max-width:640px;
+    margin:0 auto;
+  }
+  h1{ font-size:20px; margin-bottom:4px; }
+  h2{ font-size:14px; text-transform:uppercase; letter-spacing:1px; color:#8fa8c2; margin:22px 0 8px; border-top:1px solid #22394f; padding-top:16px;}
+  .sub{ color:#8fa8c2; font-size:12px; margin-bottom:16px; }
+
+  .row{ display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+  input[type=text]{
+    flex:1; padding:10px 12px; border-radius:6px; border:1px solid #2c4a68;
+    background:#152a41; color:#fff; font-size:14px;
+  }
+  button{
+    padding:10px 14px; border-radius:6px; border:none; cursor:pointer;
+    font-size:13px; font-weight:700; background:#2c4a68; color:#fff;
+  }
+  button:hover{ background:#375d84; }
+  button.primary{ background:#1c6fd1; }
+  button.primary:hover{ background:#2a80e6; }
+  button.danger{ background:#7a2323; }
+  button.danger:hover{ background:#992c2c; }
+  button.ghost{ background:transparent; border:1px solid #2c4a68; }
+  button:disabled{ opacity:.4; cursor:not-allowed; }
+
+  #connStatus{ font-size:12px; padding:4px 10px; border-radius:20px; background:#333; }
+  #connStatus.ok{ background:#1c6f39; }
+
+  .resultsBox{
+    max-height:180px; overflow-y:auto; background:#0d1826;
+    border:1px solid #22394f; border-radius:6px; margin-top:4px;
+  }
+  .resultItem{ padding:8px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid #16283c; }
+  .resultItem:hover{ background:#1c344c; }
+  .resultItem:last-child{ border-bottom:none; }
+
+  .selectedCard{
+    display:flex; align-items:center; gap:10px;
+    background:#152a41; border:1px solid #2c4a68; border-radius:6px;
+    padding:10px; margin-top:8px; font-size:14px;
+  }
+  .selectedCard img{ width:40px; height:40px; object-fit:cover; border-radius:6px; background:#0d1826; }
+  .selectedCard .name{ flex:1; }
+
+  .toggleRow{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+
+  #tickerList{ margin-top:10px; display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; }
+  .tickerRow{
+    display:flex; align-items:center; gap:8px;
+    background:#152a41; border:1px solid #2c4a68; border-radius:6px; padding:8px 10px; font-size:13px;
+  }
+  .tickerRow span{ flex:1; }
+  .tickerRow button{ padding:4px 10px; font-size:12px; }
+
+  #passanBtn{
+    width:100%; padding:20px; font-size:20px; letter-spacing:1px;
+    background:#d81e1e; margin-top:6px;
+  }
+  #passanBtn:hover{ background:#f02b2b; }
+
+  .hint{ font-size:11px; color:#6f8aa8; margin-top:4px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+</style>
+</head>
+<body>
+
+  <h1>Talkin' Baseball — Trade Reaction Control</h1>
+  <div class="sub">Deadline-day trade reveal + running ticker + Passan alert</div>
+
+  <h2>Connection</h2>
+  <div class="row">
+    <input type="text" id="topicInput" placeholder="ntfy topic (e.g. jomboy-trade-reaction-8x2k9)">
+    <button class="primary" id="connectBtn">Connect</button>
+    <span id="connStatus">not connected</span>
+  </div>
+  <div class="row">
+    <button class="ghost" id="copyDisplayBtn" disabled>Copy Display URL</button>
+  </div>
+
+  <h2>Player</h2>
+  <div class="row">
+    <input type="text" id="playerSearch" placeholder="Search player name...">
+  </div>
+  <div class="resultsBox" id="playerResults"></div>
+  <div class="selectedCard" id="playerCard" style="display:none;">
+    <img id="playerCardImg" src="">
+    <div class="name" id="playerCardName"></div>
+  </div>
+  <div class="toggleRow">
+    <button class="primary" id="showPlayerBtn">Show Player</button>
+    <button id="hidePlayerBtn">Hide Player</button>
+  </div>
+
+  <h2>Team</h2>
+  <div class="row">
+    <input type="text" id="teamSearch" placeholder="Search team name...">
+  </div>
+  <div class="resultsBox" id="teamResults"></div>
+  <div class="selectedCard" id="teamCard" style="display:none;">
+    <img id="teamCardImg" src="">
+    <div class="name" id="teamCardName"></div>
+  </div>
+  <div class="toggleRow">
+    <button class="primary" id="showTeamBtn">Show Team</button>
+    <button id="hideTeamBtn">Hide Team</button>
+  </div>
+
+  <div class="toggleRow">
+    <button class="danger" id="hideAllBtn">Hide All (Player + Team)</button>
+  </div>
+
+  <h2>Logo Bug</h2>
+  <div class="toggleRow">
+    <button id="showLogoBugBtn">Show Logo Bug</button>
+    <button id="hideLogoBugBtn">Hide Logo Bug</button>
+  </div>
+
+  <h2>Trade Ticker</h2>
+  <div class="row">
+    <input type="text" id="tickerText" placeholder="e.g. Player Name traded to Team Name">
+    <button class="primary" id="addTickerBtn">Add</button>
+  </div>
+  <div class="row">
+    <button id="addCurrentToTickerBtn">＋ Add Currently Displayed Player/Team to Ticker</button>
+  </div>
+  <div class="hint">Uses whatever player + team you last selected above (doesn't need to be on-air).</div>
+
+  <div id="tickerList"></div>
+
+  <div class="grid2" style="margin-top:12px;">
+    <button class="primary" id="tickerFadeBtn">Fade Ticker In</button>
+    <button class="ghost" id="clearTickerBtn">Clear All Ticker Items</button>
+  </div>
+
+  <h2>Passan Alert</h2>
+  <div class="hint">Plays the alert sound through the OBS display source (add its audio to your mixer) — a heads-up for Jake &amp; Trevor that a trade just broke.</div>
+  <button id="passanBtn">🚨 PASSAN ALERT — TRADE! 🚨</button>
+  <div class="row" style="margin-top:8px;">
+    <button class="ghost" id="testSoundBtn">Test Sound (local only, doesn't alert display)</button>
+  </div>
+  <audio id="localTestAudio" preload="auto"></audio>
+
+<script>
+  const CURRENT_SEASON = new Date().getFullYear();
+  let TOPIC = localStorage.getItem('tr_topic') || '';
+  document.getElementById('topicInput').value = TOPIC;
+
+  const TEAMS = [
+    {id:108,name:'Los Angeles Angels'},{id:109,name:'Arizona Diamondbacks'},
+    {id:110,name:'Baltimore Orioles'},{id:111,name:'Boston Red Sox'},
+    {id:112,name:'Chicago Cubs'},{id:113,name:'Cincinnati Reds'},
+    {id:114,name:'Cleveland Guardians'},{id:115,name:'Colorado Rockies'},
+    {id:116,name:'Detroit Tigers'},{id:117,name:'Houston Astros'},
+    {id:118,name:'Kansas City Royals'},{id:119,name:'Los Angeles Dodgers'},
+    {id:120,name:'Washington Nationals'},{id:121,name:'New York Mets'},
+    {id:133,name:'Athletics'},{id:134,name:'Pittsburgh Pirates'},
+    {id:135,name:'San Diego Padres'},{id:136,name:'Seattle Mariners'},
+    {id:137,name:'San Francisco Giants'},{id:138,name:'St. Louis Cardinals'},
+    {id:139,name:'Tampa Bay Rays'},{id:140,name:'Texas Rangers'},
+    {id:141,name:'Toronto Blue Jays'},{id:142,name:'Minnesota Twins'},
+    {id:143,name:'Philadelphia Phillies'},{id:144,name:'Atlanta Braves'},
+    {id:145,name:'Chicago White Sox'},{id:146,name:'Miami Marlins'},
+    {id:147,name:'New York Yankees'},{id:158,name:'Milwaukee Brewers'}
+  ];
+
+  function headshotUrl(playerId){
+    return `https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_auto:good,f_auto/v1/people/${playerId}/headshot/67/current`;
+  }
+  function logoUrl(teamId){
+    return `https://www.mlbstatic.com/team-logos/${teamId}.svg`;
+  }
+
+  let PLAYERS = [];
+  async function loadPlayers(){
+    try{
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/sports/1/players?season=${CURRENT_SEASON}`);
+      const data = await res.json();
+      PLAYERS = (data.people || []).map(p => ({
+        id: p.id, name: p.fullName,
+        team: p.currentTeam ? p.currentTeam.name : ''
+      }));
+    }catch(e){ console.error('player load failed', e); }
+  }
+  loadPlayers();
+
+  /* ---------------- state ---------------- */
+  let state = {
+    player: null, showPlayer: false,
+    team: null, showTeam: false,
+    showLogoBug: false,
+    ticker: { items: [], visible: false, speed: 90 },
+    alertNonce: 0
+  };
+
+  function loadPersisted(){
+    try{
+      const saved = JSON.parse(localStorage.getItem('tr_state') || 'null');
+      if(saved) state = Object.assign(state, saved);
+    }catch(e){}
+  }
+  function persist(){
+    localStorage.setItem('tr_state', JSON.stringify(state));
+  }
+  loadPersisted();
+
+  /* ---------------- ntfy publish ---------------- */
+  function publish(){
+    persist();
+    if(!TOPIC) return;
+    fetch(`https://ntfy.sh/${encodeURIComponent(TOPIC)}`, {
+      method:'POST',
+      body: JSON.stringify(state)
+    }).catch(()=>{});
+  }
+
+  /* ---------------- connection ---------------- */
+  const connectBtn = document.getElementById('connectBtn');
+  const connStatus = document.getElementById('connStatus');
+  const copyDisplayBtn = document.getElementById('copyDisplayBtn');
+
+  function connect(){
+    TOPIC = document.getElementById('topicInput').value.trim();
+    if(!TOPIC){ alert('Enter a topic name first.'); return; }
+    localStorage.setItem('tr_topic', TOPIC);
+    connStatus.textContent = 'connected';
+    connStatus.classList.add('ok');
+    copyDisplayBtn.disabled = false;
+    publish();
+  }
+  connectBtn.addEventListener('click', connect);
+
+  copyDisplayBtn.addEventListener('click', () => {
+    const url = `${location.origin}${location.pathname.replace('control.html','display.html')}?topic=${encodeURIComponent(TOPIC)}`;
+    navigator.clipboard.writeText(url).then(()=>{
+      copyDisplayBtn.textContent = 'Copied!';
+      setTimeout(()=>{ copyDisplayBtn.textContent = 'Copy Display URL'; }, 1500);
+    }).catch(()=>{ prompt('Copy this URL:', url); });
+  });
+
+  /* ---------------- player search ---------------- */
+  const playerSearch = document.getElementById('playerSearch');
+  const playerResults = document.getElementById('playerResults');
+  const playerCard = document.getElementById('playerCard');
+  const playerCardImg = document.getElementById('playerCardImg');
+  const playerCardName = document.getElementById('playerCardName');
+
+  playerSearch.addEventListener('input', () => {
+    const q = playerSearch.value.trim().toLowerCase();
+    playerResults.innerHTML = '';
+    if(q.length < 2) return;
+    const matches = PLAYERS.filter(p => p.name.toLowerCase().includes(q)).slice(0,25);
+    matches.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'resultItem';
+      div.textContent = `${p.name} — ${p.team}`;
+      div.addEventListener('click', () => selectPlayer(p));
+      playerResults.appendChild(div);
+    });
+  });
+
+  function selectPlayer(p){
+    state.player = { id: p.id, name: p.name };
+    playerCard.style.display = 'flex';
+    playerCardImg.src = headshotUrl(p.id);
+    playerCardName.textContent = `${p.name} (${p.team})`;
+    playerResults.innerHTML = '';
+    playerSearch.value = '';
+    persist();
+  }
+
+  document.getElementById('showPlayerBtn').addEventListener('click', () => {
+    if(!state.player){ alert('Search and select a player first.'); return; }
+    state.showPlayer = true; publish();
+  });
+  document.getElementById('hidePlayerBtn').addEventListener('click', () => {
+    state.showPlayer = false; publish();
+  });
+
+  /* ---------------- team search ---------------- */
+  const teamSearch = document.getElementById('teamSearch');
+  const teamResults = document.getElementById('teamResults');
+  const teamCard = document.getElementById('teamCard');
+  const teamCardImg = document.getElementById('teamCardImg');
+  const teamCardName = document.getElementById('teamCardName');
+
+  teamSearch.addEventListener('input', () => {
+    const q = teamSearch.value.trim().toLowerCase();
+    teamResults.innerHTML = '';
+    if(q.length < 1) return;
+    const matches = TEAMS.filter(t => t.name.toLowerCase().includes(q)).slice(0,15);
+    matches.forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'resultItem';
+      div.textContent = t.name;
+      div.addEventListener('click', () => selectTeam(t));
+      teamResults.appendChild(div);
+    });
+  });
+
+  function selectTeam(t){
+    state.team = { id: t.id, name: t.name };
+    teamCard.style.display = 'flex';
+    teamCardImg.src = logoUrl(t.id);
+    teamCardName.textContent = t.name;
+    teamResults.innerHTML = '';
+    teamSearch.value = '';
+    persist();
+  }
+
+  document.getElementById('showTeamBtn').addEventListener('click', () => {
+    if(!state.team){ alert('Search and select a team first.'); return; }
+    state.showTeam = true; publish();
+  });
+  document.getElementById('hideTeamBtn').addEventListener('click', () => {
+    state.showTeam = false; publish();
+  });
+
+  document.getElementById('hideAllBtn').addEventListener('click', () => {
+    state.showPlayer = false; state.showTeam = false; publish();
+  });
+
+  /* ---------------- logo bug ---------------- */
+  document.getElementById('showLogoBugBtn').addEventListener('click', () => {
+    state.showLogoBug = true; publish();
+  });
+  document.getElementById('hideLogoBugBtn').addEventListener('click', () => {
+    state.showLogoBug = false; publish();
+  });
+
+  /* ---------------- ticker ---------------- */
+  const tickerList = document.getElementById('tickerList');
+  const tickerFadeBtn = document.getElementById('tickerFadeBtn');
+
+  function renderTickerList(){
+    tickerList.innerHTML = '';
+    state.ticker.items.forEach((txt, idx) => {
+      const row = document.createElement('div');
+      row.className = 'tickerRow';
+      const span = document.createElement('span');
+      span.textContent = txt;
+      const rm = document.createElement('button');
+      rm.textContent = 'Remove';
+      rm.addEventListener('click', () => {
+        state.ticker.items.splice(idx,1);
+        renderTickerList();
+        publish();
+      });
+      row.appendChild(span); row.appendChild(rm);
+      tickerList.appendChild(row);
+    });
+    tickerFadeBtn.textContent = state.ticker.visible ? 'Fade Ticker Out' : 'Fade Ticker In';
+  }
+  renderTickerList();
+
+  document.getElementById('addTickerBtn').addEventListener('click', () => {
+    const txt = document.getElementById('tickerText').value.trim();
+    if(!txt) return;
+    state.ticker.items.push(txt);
+    document.getElementById('tickerText').value = '';
+    renderTickerList();
+    publish();
+  });
+
+  document.getElementById('addCurrentToTickerBtn').addEventListener('click', () => {
+    if(!state.player && !state.team){ alert('Select a player and/or team first.'); return; }
+    let txt;
+    if(state.player && state.team) txt = `${state.player.name} traded to ${state.team.name}`;
+    else if(state.player) txt = `${state.player.name} — traded`;
+    else txt = `Traded to ${state.team.name}`;
+    state.ticker.items.push(txt);
+    renderTickerList();
+    publish();
+  });
+
+  document.getElementById('clearTickerBtn').addEventListener('click', () => {
+    if(!confirm('Clear all ticker items?')) return;
+    state.ticker.items = [];
+    renderTickerList();
+    publish();
+  });
+
+  tickerFadeBtn.addEventListener('click', () => {
+    state.ticker.visible = !state.ticker.visible;
+    renderTickerList();
+    publish();
+  });
+
+  /* ---------------- Passan alert ---------------- */
+  document.getElementById('passanBtn').addEventListener('click', () => {
+    state.alertNonce = (state.alertNonce || 0) + 1;
+    publish();
+  });
+
+  document.getElementById('testSoundBtn').addEventListener('click', () => {
+    alert('This plays a short local beep-test in your browser only — the real alert sound lives inside display.html and fires through OBS when you hit the red PASSAN button above.');
+  });
+
+  /* auto-connect if we already have a saved topic */
+  if(TOPIC){ connect(); }
+</script>
+</body>
+</html>
