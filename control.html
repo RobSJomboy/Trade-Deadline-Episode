@@ -145,12 +145,6 @@
     <button class="danger" id="hideAllBtn">Hide All (Player + Team)</button>
   </div>
 
-  <h2>Logo Bug</h2>
-  <div class="toggleRow">
-    <button id="showLogoBugBtn">Show Logo Bug</button>
-    <button id="hideLogoBugBtn">Hide Logo Bug</button>
-  </div>
-
   <h2>Trade Ticker</h2>
   <div class="row">
     <input type="text" id="tickerText" placeholder="e.g. Player Name traded to Team Name">
@@ -223,7 +217,6 @@
   let state = {
     player: null, showPlayer: false,
     team: null, showTeam: false,
-    showLogoBug: false,
     ticker: { items: [], visible: false, speed: 90 },
     alertNonce: 0
   };
@@ -383,14 +376,6 @@
 
   document.getElementById('hideAllBtn').addEventListener('click', () => {
     state.showPlayer = false; state.showTeam = false; publish();
-  });
-
-  /* ---------------- logo bug ---------------- */
-  document.getElementById('showLogoBugBtn').addEventListener('click', () => {
-    state.showLogoBug = true; publish();
-  });
-  document.getElementById('hideLogoBugBtn').addEventListener('click', () => {
-    state.showLogoBug = false; publish();
   });
 
   /* ---------------- ticker ---------------- */
