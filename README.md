@@ -1,6 +1,8 @@
 # Trade Reaction — Talkin' Baseball Overlay (Deadline Day)
 
-Same bones as the Trade Draft Show system — two static files synced live over [ntfy.sh](https://ntfy.sh), MLB Stats API for headshots/logos — built for live reaction to real trades as they break on deadline day.
+Same bones as the Trade Draft Show system — two static files synced live over Firebase Realtime Database, MLB Stats API for headshots/logos — built for live reaction to real trades as they break on deadline day.
+
+> **Transport changed (2026-07-29):** this was originally built on [ntfy.sh](https://ntfy.sh), which became unreachable and took the whole overlay down — control published into the void, display never updated. It now uses the same Firebase RTDB transport as the other Jomboy overlays (shared `pinpoint-abf21` project, path `tradedeadline/<topic>/state`). The Firebase SDK handles its own reconnects, so the old SSE watchdog and 4-second polling fallback are gone. The connection pill in Control now reflects the **real** connection state instead of always claiming "connected".
 
 ## Files
 - **`display.html`** — the on-air graphic. OBS Browser Source → **1920×1080**, transparent background.
@@ -17,7 +19,7 @@ Same bones as the Trade Draft Show system — two static files synced live over 
 
 ## Setup
 1. Host both files somewhere static — either a new GitHub repo (recommended: keep it separate from `MLB-Trade-Draft` and `Snub-Draft`, same pattern) or add a subfolder to an existing Pages site.
-2. Pick a long, unguessable topic name, e.g. `jomboy-trade-reaction-6q1p3`.
+2. Pick a long, unguessable topic name, e.g. `jomboy-trade-reaction-6q1p3`. (The database is open, so the topic name is the only thing keeping the show private — treat it like a password.)
 3. Point your OBS Browser Source at:
    `https://<your-pages-url>/display.html?topic=jomboy-trade-reaction-6q1p3`
 4. Open `control.html` anywhere, type the same topic into the connect bar, hit **Connect**.

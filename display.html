@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Talkin' Baseball — Trade Reaction DISPLAY</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&display=swap');
 
@@ -340,10 +342,12 @@
     if(t.visible){ tickerBar.classList.add('show'); }
     else { tickerBar.classList.remove('show'); }
 
-    const sig = JSON.stringify(t.items) + '|' + (t.speed||60);
+    // RTDB hands back a sparse array as an index-keyed object, and drops it entirely when empty
+    const items = Array.isArray(t.items) ? t.items : (t.items ? Object.values(t.items) : []);
+    const sig = JSON.stringify(items) + '|' + (t.speed||60);
     if(sig !== lastTickerSig){
       lastTickerSig = sig;
-      renderTicker(t.items||[], t.speed||60);
+      renderTicker(items, t.speed||60);
     }
 
     // Passan alert
@@ -390,63 +394,22 @@
     setTimeout(()=>{ alertBanner.classList.remove('show'); }, 3200);
   }
 
-  /* ---------------- ntfy.sh live sync (SSE + watchdog + polling safety net) ----------------
-     Plain SSE is usually near-instant, but some networks (corporate proxies, VPNs,
-     antivirus HTTPS scanning) silently buffer long-lived streaming connections and only
-     flush every ~30s. A discrete poll request isn't subject to that, so we run a low-
-     frequency poll alongside SSE as a safety net, and a watchdog that force-reconnects
-     the stream if it's gone quiet (no message, no keepalive) for too long. */
-  let es = null;
-  let lastMsgAt = Date.now();
-  let sincePoll = Math.floor(Date.now() / 1000);
+  /* ---------------- Firebase RTDB live sync ----------------
+     Was ntfy.sh (SSE + watchdog + polling net). ntfy.sh went unreachable, which took
+     the whole overlay down with it. Now on the same house transport as the other JM
+     overlays — the SDK reconnects on its own, so the watchdog/poll scaffolding is gone. */
+  const FB = {
+    apiKey: "AIzaSyBG2PS2muH4i27HefuLeBnZWW-TZ5dkMCw",
+    databaseURL: "https://pinpoint-abf21-default-rtdb.firebaseio.com",
+    projectId: "pinpoint-abf21"
+  };
+  const fbKey = t => t.trim().replace(/[.#$\[\]\/\s]+/g, '-');
 
-  function handleEnvelope(envelope){
-    lastMsgAt = Date.now();
-    if(envelope && envelope.message){
-      try{
-        applyState(JSON.parse(envelope.message));
-      }catch(e){ /* ignore malformed payload */ }
-    }
+  if(TOPIC){
+    firebase.initializeApp(FB);
+    firebase.database().ref(`tradedeadline/${fbKey(TOPIC)}/state`)
+      .on('value', snap => { const s = snap.val(); if(s) applyState(s); });
   }
-
-  function connect(){
-    if(!TOPIC) return;
-    if(es) es.close();
-    es = new EventSource(`https://ntfy.sh/${encodeURIComponent(TOPIC)}/sse`);
-    es.onmessage = (ev) => {
-      try{ handleEnvelope(JSON.parse(ev.data)); }catch(e){ /* ignore non-JSON pings */ }
-    };
-    es.onerror = () => {
-      // browser auto-retries SSE; the watchdog below covers silent (non-error) stalls too
-    };
-  }
-  connect();
-
-  // Watchdog: ntfy sends a keepalive at least every ~45s even with no new messages.
-  // If we've heard nothing at all in 20s, the connection is likely dead in a way the
-  // browser hasn't noticed yet — force a fresh reconnect rather than wait it out.
-  setInterval(() => {
-    if(Date.now() - lastMsgAt > 20000){
-      connect();
-      lastMsgAt = Date.now();
-    }
-  }, 5000);
-
-  // Polling safety net: a plain fetch isn't subject to streaming-buffer delays, so this
-  // catches anything SSE missed or delayed, bounding worst-case extra latency to ~4s.
-  async function pollOnce(){
-    if(!TOPIC) return;
-    const pollFrom = sincePoll;
-    sincePoll = Math.floor(Date.now() / 1000);
-    try{
-      const res = await fetch(`https://ntfy.sh/${encodeURIComponent(TOPIC)}/json?poll=1&since=${pollFrom}`);
-      const text = await res.text();
-      text.split('\n').filter(Boolean).forEach(line => {
-        try{ handleEnvelope(JSON.parse(line)); }catch(e){ /* ignore malformed line */ }
-      });
-    }catch(e){ /* network hiccup; next interval will retry */ }
-  }
-  setInterval(pollOnce, 4000);
 
   // One quiet "arm" tap so autoplay policies don't block the Passan sound
   // the very first time it's needed. Harmless if OBS ignores it.

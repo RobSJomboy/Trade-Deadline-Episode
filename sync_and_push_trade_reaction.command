@@ -1,26 +1,15 @@
 #!/bin/bash
-# Trade Reaction overlay — sync + push
-# Mirrors sync-and-push-v2.command (Trade Draft) / snub_draft.command (Snub Draft)
-#
-# Copies the working files from the "source" folder into the git repo folder,
-# then commits + pushes. Edit the two paths below once to match your machine.
-
-SOURCE_DIR="/Users/macbook61/Documents/claude/trade-reaction"
-REPO_DIR="/Users/macbook61/Documents/claude/Trade-Reaction-Show"
+# Trade Reaction overlay — commit + push
+# The repo folder IS the working folder, so there's nothing to copy first.
+# (The old version copied from /Users/macbook61/... — paths from a different machine,
+#  so it errored out on every run here.)
 
 set -e
-
-echo "Syncing files..."
-cp "$SOURCE_DIR/display.html" "$REPO_DIR/display.html"
-cp "$SOURCE_DIR/control.html" "$REPO_DIR/control.html"
-cp "$SOURCE_DIR/README.md" "$REPO_DIR/README.md"
-
-cd "$REPO_DIR"
+cd "$(dirname "$0")"
 
 echo "Staging + committing..."
 git add -A
-TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
-git commit -m "Update Trade Reaction overlay — $TIMESTAMP" || echo "Nothing to commit."
+git commit -m "Update Trade Reaction overlay — $(date '+%Y-%m-%d %H:%M:%S')" || echo "Nothing to commit."
 
 echo "Pushing to GitHub..."
 git push
