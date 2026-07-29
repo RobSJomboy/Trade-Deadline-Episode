@@ -390,26 +390,63 @@
     setTimeout(()=>{ alertBanner.classList.remove('show'); }, 3200);
   }
 
-  /* ---------------- ntfy.sh live sync ---------------- */
+  /* ---------------- ntfy.sh live sync (SSE + watchdog + polling safety net) ----------------
+     Plain SSE is usually near-instant, but some networks (corporate proxies, VPNs,
+     antivirus HTTPS scanning) silently buffer long-lived streaming connections and only
+     flush every ~30s. A discrete poll request isn't subject to that, so we run a low-
+     frequency poll alongside SSE as a safety net, and a watchdog that force-reconnects
+     the stream if it's gone quiet (no message, no keepalive) for too long. */
   let es = null;
+  let lastMsgAt = Date.now();
+  let sincePoll = Math.floor(Date.now() / 1000);
+
+  function handleEnvelope(envelope){
+    lastMsgAt = Date.now();
+    if(envelope && envelope.message){
+      try{
+        applyState(JSON.parse(envelope.message));
+      }catch(e){ /* ignore malformed payload */ }
+    }
+  }
+
   function connect(){
     if(!TOPIC) return;
     if(es) es.close();
     es = new EventSource(`https://ntfy.sh/${encodeURIComponent(TOPIC)}/sse`);
     es.onmessage = (ev) => {
-      try{
-        const envelope = JSON.parse(ev.data);
-        if(envelope.message){
-          const state = JSON.parse(envelope.message);
-          applyState(state);
-        }
-      }catch(e){ /* ignore non-JSON pings */ }
+      try{ handleEnvelope(JSON.parse(ev.data)); }catch(e){ /* ignore non-JSON pings */ }
     };
     es.onerror = () => {
-      // browser auto-retries SSE; nothing to do
+      // browser auto-retries SSE; the watchdog below covers silent (non-error) stalls too
     };
   }
   connect();
+
+  // Watchdog: ntfy sends a keepalive at least every ~45s even with no new messages.
+  // If we've heard nothing at all in 20s, the connection is likely dead in a way the
+  // browser hasn't noticed yet — force a fresh reconnect rather than wait it out.
+  setInterval(() => {
+    if(Date.now() - lastMsgAt > 20000){
+      connect();
+      lastMsgAt = Date.now();
+    }
+  }, 5000);
+
+  // Polling safety net: a plain fetch isn't subject to streaming-buffer delays, so this
+  // catches anything SSE missed or delayed, bounding worst-case extra latency to ~4s.
+  async function pollOnce(){
+    if(!TOPIC) return;
+    const pollFrom = sincePoll;
+    sincePoll = Math.floor(Date.now() / 1000);
+    try{
+      const res = await fetch(`https://ntfy.sh/${encodeURIComponent(TOPIC)}/json?poll=1&since=${pollFrom}`);
+      const text = await res.text();
+      text.split('\n').filter(Boolean).forEach(line => {
+        try{ handleEnvelope(JSON.parse(line)); }catch(e){ /* ignore malformed line */ }
+      });
+    }catch(e){ /* network hiccup; next interval will retry */ }
+  }
+  setInterval(pollOnce, 4000);
 
   // One quiet "arm" tap so autoplay policies don't block the Passan sound
   // the very first time it's needed. Harmless if OBS ignores it.
