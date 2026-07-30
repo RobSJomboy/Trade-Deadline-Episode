@@ -145,6 +145,12 @@
     <button class="danger" id="hideAllBtn">Hide All (Player + Team)</button>
   </div>
 
+  <h2>Deadline Countdown</h2>
+  <div class="hint">Counts down to <strong>Mon Aug 3, 2026, 6:00pm ET</strong>. Sits in the ticker under "Trade Tracker" — the ticker has to be faded in for it to be visible.</div>
+  <div class="toggleRow">
+    <button class="primary" id="countdownBtn">Show Countdown</button>
+  </div>
+
   <h2>Trade Ticker</h2>
   <div class="row">
     <input type="text" id="tickerText" placeholder="e.g. Player Name traded to Team Name">
@@ -217,6 +223,7 @@
   let state = {
     player: null, showPlayer: false,
     team: null, showTeam: false,
+    showCountdown: false,
     ticker: { items: [], visible: false, speed: 90 },
     alertNonce: 0
   };
@@ -376,6 +383,20 @@
 
   document.getElementById('hideAllBtn').addEventListener('click', () => {
     state.showPlayer = false; state.showTeam = false; publish();
+  });
+
+  /* ---------------- deadline countdown ----------------
+     Only the visibility flag is published. The clock itself runs inside display.html
+     off a hardcoded target, so there's no per-second traffic through Firebase. */
+  const countdownBtn = document.getElementById('countdownBtn');
+  function renderCountdownBtn(){
+    countdownBtn.textContent = state.showCountdown ? 'Hide Countdown' : 'Show Countdown';
+  }
+  renderCountdownBtn();
+  countdownBtn.addEventListener('click', () => {
+    state.showCountdown = !state.showCountdown;
+    renderCountdownBtn();
+    publish();
   });
 
   /* ---------------- ticker ---------------- */
