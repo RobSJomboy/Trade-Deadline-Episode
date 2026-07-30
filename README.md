@@ -20,7 +20,11 @@ Same bones as the Trade Draft Show system — two static files synced live over 
    - The target instant is hardcoded in `display.html` with an explicit `-04:00` offset, so it's correct regardless of the timezone on the machine running OBS. **If the deadline date ever moves, edit `DEADLINE_MS` in `display.html`** — it's the only place it's defined.
    - The clock ticks locally in each display off that fixed target; only the show/hide flag travels over Firebase, so there's no per-second network traffic. It recomputes from the target every tick rather than decrementing, so a throttled interval skips a frame instead of drifting behind.
    - Reads `4D 04:12:33` while days remain, drops to `04:12:33` inside the last day, and shows `PASSED` once the deadline is by.
-4. **Passan Alert** — the big red button. Every click plays an audio cue *through the OBS display source itself* (the sound is baked into `display.html`, no extra files to host), so add that browser source to your audio mixer and it'll cue Jake & Trevor the moment a trade drops. Also flashes a quick on-screen "TRADE ALERT" banner as a visual backup.
+4. **Trade count** — a "how many trades have there been" badge above the ticker on the left, flush with the bar's left edge and bottom-aligned to the same line as the name tags. Toggle with **Show / Hide Trade Count**.
+   - The number is **set manually**, not derived from your ticker lines — league-wide trade counts usually run ahead of however many lines you've typed. Use **−1 / +1**, or type straight into the field.
+   - **Match Ticker** snaps it to the current ticker item count if you do want the two in sync.
+   - Every path funnels through one setter that clamps to a non-negative integer, so a stray keystroke can't put `-3`, `4.7`, or `NaN` on air. `display.html` re-coerces on receipt too, since RTDB can hand a number back as a string.
+5. **Passan Alert** — the big red button. Every click plays an audio cue *through the OBS display source itself* (the sound is baked into `display.html`, no extra files to host), so add that browser source to your audio mixer and it'll cue Jake & Trevor the moment a trade drops. Also flashes a quick on-screen "TRADE ALERT" banner as a visual backup.
 
 ## Setup
 1. Host both files somewhere static — either a new GitHub repo (recommended: keep it separate from `MLB-Trade-Draft` and `Snub-Draft`, same pattern) or add a subfolder to an existing Pages site.

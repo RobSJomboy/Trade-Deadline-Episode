@@ -24,6 +24,10 @@
     flex:1; padding:10px 12px; border-radius:6px; border:1px solid #2c4a68;
     background:#152a41; color:#fff; font-size:14px;
   }
+  input[type=number]{
+    width:90px; padding:10px 12px; border-radius:6px; border:1px solid #2c4a68;
+    background:#152a41; color:#fff; font-size:15px; font-weight:700; text-align:center;
+  }
   button{
     padding:10px 14px; border-radius:6px; border:none; cursor:pointer;
     font-size:13px; font-weight:700; background:#2c4a68; color:#fff;
@@ -145,6 +149,18 @@
     <button class="danger" id="hideAllBtn">Hide All (Player + Team)</button>
   </div>
 
+  <h2>Trade Count</h2>
+  <div class="hint">"How many trades have there been" badge, above the ticker on the left. Set it to whatever number you're reporting on air — it's independent of your ticker lines, or hit <strong>Match Ticker</strong> to snap it to however many lines you've added.</div>
+  <div class="toggleRow">
+    <button class="primary" id="tradeCountBtn">Show Trade Count</button>
+  </div>
+  <div class="row" style="margin-top:8px;">
+    <button id="tcMinusBtn">−1</button>
+    <input type="number" id="tcInput" min="0" step="1" value="0">
+    <button id="tcPlusBtn">+1</button>
+    <button class="ghost" id="tcMatchBtn">Match Ticker</button>
+  </div>
+
   <h2>Deadline Countdown</h2>
   <div class="hint">Counts down to <strong>Mon Aug 3, 2026, 6:00pm ET</strong>. Sits in the ticker under "Trade Tracker" — the ticker has to be faded in for it to be visible.</div>
   <div class="toggleRow">
@@ -224,6 +240,7 @@
     player: null, showPlayer: false,
     team: null, showTeam: false,
     showCountdown: false,
+    tradeCount: 0, showTradeCount: false,
     ticker: { items: [], visible: false, speed: 90 },
     alertNonce: 0
   };
@@ -384,6 +401,34 @@
   document.getElementById('hideAllBtn').addEventListener('click', () => {
     state.showPlayer = false; state.showTeam = false; publish();
   });
+
+  /* ---------------- trade count ---------------- */
+  const tradeCountBtn = document.getElementById('tradeCountBtn');
+  const tcInput = document.getElementById('tcInput');
+
+  function renderTradeCount(){
+    tradeCountBtn.textContent = state.showTradeCount ? 'Hide Trade Count' : 'Show Trade Count';
+    tcInput.value = state.tradeCount;
+  }
+
+  // Single funnel for every way the number can change, so the clamp to a
+  // non-negative integer can't be bypassed by typing straight into the field.
+  function setTradeCount(n){
+    state.tradeCount = Math.max(0, Math.floor(Number(n)) || 0);
+    renderTradeCount();
+    publish();
+  }
+  renderTradeCount(); // reflect whatever loadPersisted() restored
+
+  tradeCountBtn.addEventListener('click', () => {
+    state.showTradeCount = !state.showTradeCount;
+    renderTradeCount();
+    publish();
+  });
+  document.getElementById('tcPlusBtn').addEventListener('click', () => setTradeCount(state.tradeCount + 1));
+  document.getElementById('tcMinusBtn').addEventListener('click', () => setTradeCount(state.tradeCount - 1));
+  tcInput.addEventListener('change', () => setTradeCount(tcInput.value));
+  document.getElementById('tcMatchBtn').addEventListener('click', () => setTradeCount(state.ticker.items.length));
 
   /* ---------------- deadline countdown ----------------
      Only the visibility flag is published. The clock itself runs inside display.html
