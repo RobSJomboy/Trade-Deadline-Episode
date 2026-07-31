@@ -36,15 +36,16 @@
     pointer-events:none;
   }
 
-  /* Geometry note: the ticker is 110px tall (border-box, incl. its 3px rules) and
-     floats 100px off the bottom, so it occupies y=870..980 and its TOP edge is y=870.
-     The name tags sit at y=824 and run ~31px tall, putting the bottom of the whole
-     player/arrow/team group at y=855 — 15px of air above the ticker. Move or resize
-     the ticker and every number in this block has to move with it, or the bar will
-     ride up over the name tags. */
+  /* Geometry note: the ticker is 55px tall (border-box, incl. its 3px rules) and
+     floats 100px off the bottom, so it occupies y=925..980 and its TOP edge is y=925.
+     The name tags sit at y=879 and run ~31px tall, putting the bottom of the whole
+     player/arrow/team group at y=910 — 15px of air above the ticker. Move or resize
+     the ticker and every number in this block has to move with it, or the gap drifts
+     (too small and the bar rides over the name tags; too large and the group floats).
+     The trade-count badge's `bottom` is tied to the same y=910 line. */
   .headshotWrap, .logoWrap{
     position:absolute;
-    top:571px;
+    top:626px;
     width:240px; height:240px;
     display:flex; align-items:center; justify-content:center;
     opacity:0;
@@ -78,7 +79,7 @@
 
   #nameTag{
     position:absolute;
-    left:565px; top:824px; width:240px;
+    left:565px; top:879px; width:240px;
     text-align:center;
     color:#fff;
     font-weight:800;
@@ -93,7 +94,7 @@
 
   #teamNameTag{
     position:absolute;
-    left:1115px; top:824px; width:240px;
+    left:1115px; top:879px; width:240px;
     text-align:center;
     color:#fff;
     font-weight:800;
@@ -106,11 +107,11 @@
   }
   #teamNameTag.show{ opacity:1; transform:translateY(0); }
 
-  /* Arrow between headshot and logo. Images span y=571..811, so centre is y=691;
-     at 70px tall that puts the top at 656. viewBox stays 390x110 — the SVG just scales. */
+  /* Arrow between headshot and logo. Images span y=626..866, so centre is y=746;
+     at 70px tall that puts the top at 711. viewBox stays 390x110 — the SVG just scales. */
   #arrowWrap{
     position:absolute;
-    left:835px; top:656px;
+    left:835px; top:711px;
     width:250px; height:70px;
     opacity:0;
     transform:scaleX(.6);
@@ -127,12 +128,12 @@
 
   /* ================= TRADE COUNT ================= */
   /* Sits above the ticker on the left, flush with the bar's left edge (x=10) and
-     bottom-aligned 15px above its top edge — bottom:225px == y=855, same line the
+     bottom-aligned 15px above its top edge — bottom:170px == y=910, same line the
      name tags sit on. Anchored by `bottom` so the badge grows upward and that 15px
      holds no matter how tall the content gets. */
   #tradeCount{
     position:absolute;
-    left:10px; bottom:225px;
+    left:10px; bottom:170px;
     display:flex; align-items:center; gap:14px;
     background:#173a56;
     color:#fff;
@@ -163,10 +164,15 @@
   /* ================= TICKER ================= */
   /* Floats 100px off the bottom, inset 10px each side. The 3px rules are top and
      bottom ONLY — the left and right edges stay pure white with no stroke.
-     box-sizing:border-box keeps the 110px total honest with the borders included. */
+     box-sizing:border-box keeps the 55px total honest with the borders included.
+
+     Halved from 110px to 55px. Anchored by `bottom`, so the bottom edge and both
+     side insets don't move — only the top edge comes down, 870 -> 925. Everything
+     inside is halved to match; the 3px rules are deliberately NOT halved, since
+     that width was asked for outright and 1.5px reads as a hairline on air. */
   #tickerBar{
     position:absolute;
-    left:10px; right:10px; bottom:100px; height:110px;
+    left:10px; right:10px; bottom:100px; height:55px;
     box-sizing:border-box;
     border-top:3px solid #173a56;
     border-bottom:3px solid #173a56;
@@ -175,7 +181,7 @@
     transition: opacity 750ms cubic-bezier(.2,.8,.2,1);
     display:flex; align-items:stretch;
     overflow:hidden;
-    box-shadow: 0 6px 18px rgba(0,0,0,.28);
+    box-shadow: 0 3px 9px rgba(0,0,0,.28);
   }
   #tickerBar.show{ opacity:1; }
 
@@ -186,36 +192,36 @@
     color:#fff;
     display:flex; flex-direction:column;
     align-items:flex-start; justify-content:center;
-    gap:7px;
-    padding:0 30px;
+    gap:3px;
+    padding:0 15px;
   }
   #tickerLabel{
     font-weight:900;
-    font-size:30px;
+    font-size:15px;
     line-height:1;
-    letter-spacing:1px;
+    letter-spacing:.5px;
     white-space:nowrap;
     text-transform:uppercase;
   }
 
   #tickerCountdown{
-    display:flex; align-items:baseline; gap:9px;
+    display:flex; align-items:baseline; gap:5px;
     white-space:nowrap;
     line-height:1;
   }
   #tickerCountdown.hidden{ display:none; }
   .cdLabel{
     font-weight:800;
-    font-size:14px;
-    letter-spacing:1.6px;
+    font-size:8px;
+    letter-spacing:.8px;
     text-transform:uppercase;
     opacity:.72;
   }
   /* tabular-nums stops the clock from shivering as digit widths change each second */
   .cdTime{
     font-weight:900;
-    font-size:26px;
-    letter-spacing:.5px;
+    font-size:13px;
+    letter-spacing:.25px;
     font-variant-numeric: tabular-nums;
     font-feature-settings:"tnum" 1;
   }
@@ -247,21 +253,21 @@
     align-items:center;
     color:#173a56;
     font-weight:800;
-    font-size:34px;
-    letter-spacing:.3px;
-    padding:0 48px;
+    font-size:17px;
+    letter-spacing:.15px;
+    padding:0 24px;
     white-space:nowrap;
     text-transform:uppercase;
   }
   .tickerItem .arrow{
-    margin:0 16px;
+    margin:0 8px;
     font-weight:900;
     color:#d81e1e;
   }
   /* Talkin' Baseball mark between every item, in place of the old bullet dot */
   .tickerLogo{
     flex:0 0 auto;
-    width:46px; height:46px;
+    width:23px; height:23px;
     object-fit:contain;
     display:block;
   }
