@@ -30,9 +30,18 @@
   #stage{ position:relative; width:1920px; height:1080px; }
 
   /* ================= PLAYER / ARROW / TEAM ================= */
+  /* Clipped at y=980 — the ticker's BOTTOM edge — so the reveal group can slide down
+     and vanish behind the bar on exit. The bar is painted after this element, so it
+     already occludes y=925..980; the clip covers the rest, which matters because the
+     bar is only 55px tall and a 240px headshot would otherwise poke out underneath it
+     mid-slide. Clipping at the bar's bottom rather than its top means that if the
+     ticker happens to be faded out, the graphic slides 55px further before cutting
+     instead of stopping dead at an invisible line.
+     Tied to the ticker's position — if the bar moves, this has to move with it. */
   #tradeRow{
     position:absolute;
-    left:0; top:0; width:1920px; height:1080px;
+    left:0; top:0; width:1920px; height:980px;
+    overflow:hidden;
     pointer-events:none;
   }
 
@@ -50,7 +59,12 @@
     display:flex; align-items:center; justify-content:center;
     opacity:0;
     transform:translateY(650px);
-    transition: transform 750ms cubic-bezier(.2,.8,.2,1), opacity 750ms cubic-bezier(.2,.8,.2,1);
+    /* EXIT (750ms): accelerates downward like it's dropping behind the bar, and holds
+       full opacity for the first 490ms so you see it slide UNDER the ticker instead of
+       dissolving in mid-air. The fade only runs over the last 260ms, by which point
+       the clip on #tradeRow has it. 490 + 260 = 750, same as the transform. */
+    transition: transform 750ms cubic-bezier(.45,0,.85,.35),
+                opacity 260ms linear 490ms;
   }
   /* Group is centred on x=960: 240 + 30 gap + 250 arrow + 30 gap + 240 = 790 wide. */
   .headshotWrap{ left:565px; }
@@ -59,6 +73,9 @@
   .headshotWrap.show, .logoWrap.show{
     opacity:1;
     transform:translateY(0);
+    /* ENTRANCE: unchanged — the original 750ms ease-out rise. */
+    transition: transform 750ms cubic-bezier(.2,.8,.2,1),
+                opacity 750ms cubic-bezier(.2,.8,.2,1);
   }
 
   .headshotWrap img{
@@ -87,10 +104,18 @@
     letter-spacing:.5px;
     text-shadow:0 3px 10px rgba(0,0,0,.6);
     opacity:0;
-    transform:translateY(20px);
-    transition: transform 750ms cubic-bezier(.2,.8,.2,1), opacity 750ms cubic-bezier(.2,.8,.2,1);
+    /* 160px so it clears the y=980 clip line (top 879 + 31 tall needs >101). */
+    transform:translateY(160px);
+    /* EXIT: matches the images — 750ms accelerating drop, fade only over the last 260ms. */
+    transition: transform 750ms cubic-bezier(.45,0,.85,.35),
+                opacity 260ms linear 490ms;
   }
-  #nameTag.show{ opacity:1; transform:translateY(0); }
+  #nameTag.show{
+    opacity:1; transform:translateY(0);
+    /* ENTRANCE: unchanged ease-out. */
+    transition: transform 750ms cubic-bezier(.2,.8,.2,1),
+                opacity 750ms cubic-bezier(.2,.8,.2,1);
+  }
 
   #teamNameTag{
     position:absolute;
@@ -102,10 +127,18 @@
     letter-spacing:.5px;
     text-shadow:0 3px 10px rgba(0,0,0,.6);
     opacity:0;
-    transform:translateY(20px);
-    transition: transform 750ms cubic-bezier(.2,.8,.2,1), opacity 750ms cubic-bezier(.2,.8,.2,1);
+    /* 160px so it clears the y=980 clip line (top 879 + 31 tall needs >101). */
+    transform:translateY(160px);
+    /* EXIT: matches the images — 750ms accelerating drop, fade only over the last 260ms. */
+    transition: transform 750ms cubic-bezier(.45,0,.85,.35),
+                opacity 260ms linear 490ms;
   }
-  #teamNameTag.show{ opacity:1; transform:translateY(0); }
+  #teamNameTag.show{
+    opacity:1; transform:translateY(0);
+    /* ENTRANCE: unchanged ease-out. */
+    transition: transform 750ms cubic-bezier(.2,.8,.2,1),
+                opacity 750ms cubic-bezier(.2,.8,.2,1);
+  }
 
   /* Arrow between headshot and logo. Images span y=626..866, so centre is y=746;
      at 70px tall that puts the top at 711. viewBox stays 390x110 — the SVG just scales. */
@@ -114,11 +147,20 @@
     left:835px; top:711px;
     width:250px; height:70px;
     opacity:0;
-    transform:scaleX(.6);
+    /* Was scaleX only, so the arrow never travelled downward and couldn't reach the
+       bar. 320px clears the y=980 clip line (top 711 + 70 tall needs >269). */
+    transform:translateY(320px) scaleX(.6);
     transform-origin:left center;
-    transition: transform 750ms cubic-bezier(.2,.8,.2,1), opacity 750ms cubic-bezier(.2,.8,.2,1);
+    /* EXIT: matches the images — 750ms accelerating drop, fade only over the last 260ms. */
+    transition: transform 750ms cubic-bezier(.45,0,.85,.35),
+                opacity 260ms linear 490ms;
   }
-  #arrowWrap.show{ opacity:1; transform:scaleX(1); }
+  #arrowWrap.show{
+    opacity:1; transform:translateY(0) scaleX(1);
+    /* ENTRANCE: unchanged ease-out. */
+    transition: transform 750ms cubic-bezier(.2,.8,.2,1),
+                opacity 750ms cubic-bezier(.2,.8,.2,1);
+  }
   #arrowWrap svg{ width:100%; height:100%; filter: drop-shadow(0 6px 14px rgba(0,0,0,.55)); }
 
   /* The corner logo bug is gone; the same artwork is now the ticker separator.
